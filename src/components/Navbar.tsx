@@ -37,6 +37,7 @@ const Navbar = () => {
             <ul className="absolute bg-gray-800 mt-2 rounded-md shadow-md p-3 transition-all duration-300 ease-in-out transform origin-top scale-100">
               <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/data-master/produk" className="flex items-center"><Package className="mr-2" size={16} /> Produk</Link></li>
               <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/data-master/mitra" className="flex items-center"><Users className="mr-2" size={16} /> Mitra</Link></li>
+              <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/users/page" className="flex items-center"><Users className="mr-2" size={16} /> Users</Link></li>
             </ul>
           )}
         </li>

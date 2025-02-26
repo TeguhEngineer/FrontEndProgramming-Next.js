@@ -2,6 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Users, Package, ShoppingCart, DollarSign } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Home() {
   const data = [
@@ -10,10 +11,11 @@ export default function Home() {
     { name: 'Mar', omzet: 720000 },
     { name: 'Apr', omzet: 800000 },
     { name: 'May', omzet: 900000 },
+    { name: 'Jun', omzet: 1000000 },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 mt-20 p-6">
+    <div className="min-h-screen bg-gray-100 p-6 pt-24">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Dashboard</h1>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="p-6 bg-white shadow-lg rounded-lg flex items-center gap-4">
@@ -54,7 +56,7 @@ export default function Home() {
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="omzet" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="omzet" fill="#eab308" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
