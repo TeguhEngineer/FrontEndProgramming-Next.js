@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Search, Menu, User, LogOut, Package, Users, ChevronDown } from "lucide-react";
+import { Search, Menu, User, LogOut, Package, Users, ChevronDown, CalendarCheck } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -11,7 +11,7 @@ const Navbar = () => {
 
   return (
     <nav className="bg-gray-900 text-white p-4 flex justify-between items-center flex-wrap fixed top-0 w-full z-50 shadow-md">
-      <div className="text-2xl font-bold hover:text-yellow-500 hidden md:block">KonsinyasiGO</div>
+      <div className="text-2xl font-bold hover:text-yellow-500 hidden md:block">BookingRooms</div>
       <div className="relative hidden md:block">
         <input
           type="text"
@@ -20,37 +20,33 @@ const Navbar = () => {
         />
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white" size={16} />
       </div>
-      
-      <button 
-        className="md:hidden p-2" 
+
+      <button
+        className="md:hidden p-2"
         onClick={() => setMenuOpen(!menuOpen)}
       >
         <Menu size={24} />
       </button>
-      
+
       <ul className={`md:flex space-x-6 absolute md:relative bg-gray-900 md:bg-transparent w-full md:w-auto left-0 top-14 md:top-auto transition-all duration-300 ease-in-out transform ${menuOpen ? 'block' : 'hidden'}`}>
-        <li className="p-2 md:p-0"><Link href="/" className="cursor-text pl-7 text-2xl font-bold hover:text-yellow-500 md:hidden ">KonsinyasiGO</Link></li>
-        <li className="p-2 md:p-0"><Link href="/dashboard" className="p-2 hover:bg-gray-700 rounded-md block">Dashboard</Link></li>
+        <li className="p-2 md:p-0"><Link href="/" className="cursor-text pl-7 text-2xl font-bold hover:text-yellow-500 md:hidden ">BookingRooms</Link></li>
+        <li className="p-2 md:p-0"><Link href="/" className="p-2 hover:bg-gray-700 rounded-md block">Dashboard</Link></li>
         <li className="p-2 md:p-0 relative">
           <button onClick={() => setDataMasterOpen(!dataMasterOpen)} className="p-2 hover:bg-gray-700 rounded-md w-full flex items-center">Data Master <ChevronDown size={16} className="ml-1" /></button>
           {dataMasterOpen && (
             <ul className="absolute bg-gray-800 mt-2 rounded-md shadow-md p-3 transition-all duration-300 ease-in-out transform origin-top scale-100">
-              <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/data-master/produk" className="flex items-center"><Package className="mr-2" size={16} /> Produk</Link></li>
-              <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/data-master/mitra" className="flex items-center"><Users className="mr-2" size={16} /> Mitra</Link></li>
-              <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/users/page" className="flex items-center"><Users className="mr-2" size={16} /> Users</Link></li>
+              <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/room" className="flex items-center"><Package className="mr-2" size={16} /> Rooms</Link></li>
+              <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/booking" className="flex items-center"><CalendarCheck className="mr-2" size={16} /> Booking</Link></li>
+              <li className="p-3 hover:bg-gray-700 rounded-md"><Link href="/users" className="flex items-center"><Users className="mr-2" size={16} /> Users</Link></li>
             </ul>
           )}
         </li>
-        <li className="p-2 md:p-0"><Link href="/konsinyasi" className="p-2 hover:bg-gray-700 rounded-md block">Konsinyasi</Link></li>
-        <li className="p-2 md:p-0"><Link href="/realisasi" className="p-2 hover:bg-gray-700 rounded-md block">Realisasi</Link></li>
-        <li className="p-2 md:p-0"><Link href="/transaksi" className="p-2 hover:bg-gray-700 rounded-md block">Transaksi</Link></li>
       </ul>
-      
       <div className="relative">
         <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center space-x-2">
           <Image src="/profile.png" alt="User Avatar" width={32} height={32} className="rounded-full" />
           <div className="text-sm hover:text-blue-500 flex items-center">Teguh Afriansyah <ChevronDown size={16} className="ml-1" /></div>
-          
+
         </button>
         {userMenuOpen && (
           <ul className="absolute right-0 bg-gray-800 mt-2 rounded-md shadow-md p-3 transition-all duration-300 ease-in-out transform origin-top scale-100">

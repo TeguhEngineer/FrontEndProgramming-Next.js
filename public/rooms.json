@@ -1,0 +1,139 @@
+[
+  {
+    "id": 1,
+    "nama": "Ruang Rapat Utama",
+    "kapasitas": 30,
+    "lokasi": "Gedung A Lantai 2",
+    "status": "Tersedia",
+    "fasilitas": [
+      "Proyektor",
+      "Whiteboard",
+      "AC",
+      "Meja Konferensi"
+    ],
+    "luas": 72
+  },
+  {
+    "id": 2,
+    "nama": "Ruang Kelas Komputer",
+    "kapasitas": 25,
+    "lokasi": "Gedung B Lantai 3",
+    "status": "Digunakan",
+    "fasilitas": [
+      "Komputer",
+      "Proyektor",
+      "AC",
+      "Papan Tulis"
+    ],
+    "luas": 60
+  },
+  {
+    "id": 3,
+    "nama": "Ruang Seminar",
+    "kapasitas": 50,
+    "lokasi": "Gedung C Lantai 1",
+    "status": "Tersedia",
+    "fasilitas": [
+      "Panggung",
+      "Proyektor",
+      "Sound System",
+      "AC"
+    ],
+    "luas": 100
+  },
+  {
+    "id": 4,
+    "nama": "Ruang Perpustakaan",
+    "kapasitas": 40,
+    "lokasi": "Gedung D Lantai 2",
+    "status": "Tersedia",
+    "fasilitas": [
+      "Rak Buku",
+      "Meja Baca",
+      "WiFi",
+      "AC"
+    ],
+    "luas": 80
+  },
+  {
+    "id": 5,
+    "nama": "Ruang Laboratorium Kimia",
+    "kapasitas": 20,
+    "lokasi": "Gedung Sains Lantai 1",
+    "status": "Digunakan",
+    "fasilitas": [
+      "Meja Praktikum",
+      "Lemari Bahan Kimia",
+      "Ventilasi Khusus"
+    ],
+    "luas": 50
+  },
+  {
+    "id": 6,
+    "nama": "Ruang Auditorium",
+    "kapasitas": 200,
+    "lokasi": "Gedung Utama Lantai 1",
+    "status": "Tersedia",
+    "fasilitas": [
+      "Panggung Besar",
+      "Proyektor Besar",
+      "Sound System Lengkap",
+      "AC Central"
+    ],
+    "luas": 250
+  },
+  {
+    "id": 7,
+    "nama": "Ruang Konsultasi",
+    "kapasitas": 10,
+    "lokasi": "Gedung Administrasi Lantai 2",
+    "status": "Tersedia",
+    "fasilitas": [
+      "Meja Konsultasi",
+      "AC",
+      "WiFi"
+    ],
+    "luas": 30
+  },
+  {
+    "id": 8,
+    "nama": "Ruang Olahraga Indoor",
+    "kapasitas": 40,
+    "lokasi": "Gedung Olahraga",
+    "status": "Digunakan",
+    "fasilitas": [
+      "Lapangan Serbaguna",
+      "Tribun",
+      "AC",
+      "Perlengkapan Olahraga"
+    ],
+    "luas": 150
+  },
+  {
+    "id": 9,
+    "nama": "Ruang Musik",
+    "kapasitas": 15,
+    "lokasi": "Gedung Kesenian Lantai 1",
+    "status": "Tersedia",
+    "fasilitas": [
+      "Alat Musik",
+      "Akustik Baik",
+      "Panggung Kecil"
+    ],
+    "luas": 40
+  },
+  {
+    "id": 10,
+    "nama": "Ruang Workshop",
+    "kapasitas": 25,
+    "lokasi": "Gedung Teknik Lantai 2",
+    "status": "Digunakan",
+    "fasilitas": [
+      "Meja Kerja",
+      "Peralatan Praktik",
+      "AC",
+      "Penyimpanan Alat"
+    ],
+    "luas": 70
+  }
+]

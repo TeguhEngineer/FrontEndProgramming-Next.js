@@ -1,0 +1,57 @@
+[
+    {
+        "id": 1,
+        "roomId": 1,
+        "userId": 2,
+        "tanggalMulai": "2024-04-15",
+        "tanggalSelesai": "2024-04-15",
+        "jamMulai": "09:00",
+        "jamSelesai": "11:00",
+        "keperluan": "Rapat Bulanan Tim Pemasaran",
+        "status": "Disetujui"
+    },
+    {
+        "id": 2,
+        "roomId": 3,
+        "userId": 1,
+        "tanggalMulai": "2024-04-16",
+        "tanggalSelesai": "2024-04-16",
+        "jamMulai": "14:00",
+        "jamSelesai": "16:00",
+        "keperluan": "Workshop Pengembangan Karyawan",
+        "status": "Menunggu"
+    },
+    {
+        "id": 3,
+        "roomId": 2,
+        "userId": 3,
+        "tanggalMulai": "2024-04-17",
+        "tanggalSelesai": "2024-04-17",
+        "jamMulai": "10:00",
+        "jamSelesai": "12:00",
+        "keperluan": "Diskusi Proyek Strategis",
+        "status": "Ditolak"
+    },
+    {
+        "id": 4,
+        "roomId": 4,
+        "userId": 4,
+        "tanggalMulai": "2024-04-18",
+        "tanggalSelesai": "2024-04-18",
+        "jamMulai": "13:00",
+        "jamSelesai": "15:00",
+        "keperluan": "Presentasi Keuangan Kuartal",
+        "status": "Disetujui"
+    },
+    {
+        "id": 5,
+        "roomId": 5,
+        "userId": 5,
+        "tanggalMulai": "2024-04-19",
+        "tanggalSelesai": "2024-04-19",
+        "jamMulai": "11:00",
+        "jamSelesai": "13:00",
+        "keperluan": "Wawancara Kandidat Baru",
+        "status": "Menunggu"
+    }
+]
