@@ -1,376 +1,773 @@
-"use client"
-
-import React, { useState, useMemo, useEffect } from 'react';
-import { Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+"use client";
+import { useEffect, useState } from "react";
 
 interface Room {
     id: number;
-    nama: string;
-    kapasitas: number;
-    lokasi: string;
+    name: string;
+    categoryId: number;
+    price: number;
+    capacity: number;
+    description: string;
     status: string;
-    fasilitas: string[];
-    luas: number;
+}
+
+interface Category {
+    id: number;
+    name: string;
 }
 
 export default function RoomTable() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [selectedRooms, setSelectedRooms] = useState<number[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
-    const itemsPerPage = 5;
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [search, setSearch] = useState("");
+    const [message, setMessage] = useState("");
+    const [roomName, setRoomName] = useState("");
+    const [name, setName] = useState("");
+    const [roomId, setRoomId] = useState(0);
+    const [categoryId, setCategoryId] = useState(0);
+    const [price, setPrice] = useState(0);
+    const [capacity, setCapacity] = useState(0);
+    const [desc, setDesc] = useState("");
+    const [isOpen, setIsOpen] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [isDelete, setIsDelete] = useState(false);
+    const [isSuccess, setISuccess] = useState(false); // pesan untuk menyimpan data
+    const [isEditAlert, setEditAlert] = useState(false); // pesan untuk menyimpan data
+    const [isDeleteAlert, setDeleteAlert] = useState(false); // pesan untuk menyimpan data
 
-    // Modal add data room
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newRoom, setNewRoom] = useState<Room>({
-        id: 0,
-        nama: '',
-        kapasitas: 0,
-        lokasi: '',
-        status: 'Tersedia',
-        fasilitas: [],
-        luas: 0
-    });
+    const accessToken = localStorage.getItem("accessToken");
 
-    const fasilitasOptions = ['AC', 'Proyektor', 'WiFi', 'Papan Tulis', 'Sound System'];
-
-    const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setNewRoom(prev => ({
-            ...prev,
-            [name]: name === "kapasitas" || name === "luas" ? Number(value) : value
-        }));
-    };
-
-    const handleFasilitasChange = (fasilitas: string) => {
-        setNewRoom(prev => ({
-            ...prev,
-            fasilitas: prev.fasilitas.includes(fasilitas)
-                ? prev.fasilitas.filter(f => f !== fasilitas)
-                : [...prev.fasilitas, fasilitas]
-        }));
-    };
-
-
-    const handleAddRoom = () => {
-        if (!newRoom.nama || !newRoom.lokasi || newRoom.kapasitas <= 0) {
-            alert("Harap lengkapi data ruangan!");
-            return;
-        }
-        setRooms(prevRooms => [
-            ...prevRooms,
-            { ...newRoom, id: prevRooms.length + 1 }
-        ]);
-        closeModal();
-    };
-
-
-    // Fetch data saat komponen dimuat
-    useEffect(() => {
-        const fetchRooms = async () => {
-            try {
-                const response = await fetch('/rooms.json');
-                const data = await response.json();
+    const handleGet = async () => {
+        try {
+            const response = await fetch("https://simaru.amisbudi.cloud/api/rooms", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+            });
+            const { data } = await response.json();
+            console.log(data);
+            if (data) {
                 setRooms(data);
-            } catch (error) {
-                console.error('Error fetching rooms:', error);
             }
-        };
+        } catch (err) {
+            console.error('Error fetching rooms:', err);
+        }
+    };
 
-        fetchRooms();
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                name: name,
+                categoryId: categoryId,
+                price: price,
+                capacity: capacity,
+                description: desc,
+            };
+
+            const response = await fetch("https://simaru.amisbudi.cloud/api/rooms", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const { data, message } = await response.json();
+            console.log(data);
+            if (data) {
+                setMessage(message);
+                setRoomName(data.name);
+                setISuccess(true);
+                setIsOpen(false);
+                setTimeout(() => setISuccess(false), 3000);
+                handleGet();
+            }
+        } catch (err) {
+            console.error('Error adding room:', err);
+        }
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                name: name,
+                categoryId: categoryId,
+                price: price,
+                capacity: capacity,
+                description: desc,
+            };
+
+            const response = await fetch(`https://simaru.amisbudi.cloud/api/rooms/${roomId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const { data, message } = await response.json();
+            console.log(data);
+            if (data) {
+                setMessage(message);
+                setRoomName(data.name);
+                setEditAlert(true);
+                setIsEdit(false);
+                setTimeout(() => setEditAlert(false), 3000);
+                handleGet();
+            }
+        } catch (err) {
+            console.error('Error updating room:', err);
+        }
+    };
+
+    const handleDelete = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                name: name,
+                categoryId: categoryId,
+                price: price,
+                capacity: capacity,
+                description: desc,
+            };
+
+            const response = await fetch(`https://simaru.amisbudi.cloud/api/rooms/${roomId}`, {
+                method: "DELETE",
+                headers: {
+                    // "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const { data, message } = await response.json();
+            console.log(data);
+            if (data) {
+                setMessage(message);
+                setRoomName(data.name);
+            }
+        } catch (err) {
+            // setError('An error occurred. Please try again.');
+        } finally {
+            setMessage(message);
+            setDeleteAlert(true);
+            setIsDelete(false);
+            setTimeout(() => setDeleteAlert(false), 3000);
+            handleGet();
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const response = await fetch("https://simaru.amisbudi.cloud/api/categories", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+            });
+
+            const data = await response.json();
+            setCategories(data);
+        } catch (error) {
+            console.error("Failed to fetch categories:", error);
+        }
+    };
+
+    useEffect(() => {
+        handleGet();
+        fetchCategories();
     }, []);
 
-    // Fungsi pencarian dan filter ruangan
-    const filteredRooms = useMemo(() => {
-        return rooms.filter(room =>
-            room.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            room.lokasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            room.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            room.fasilitas.some(fasilitas =>
-                fasilitas.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-        );
-    }, [rooms, searchTerm]);
-
-    // Pagination
-    const paginatedRooms = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return filteredRooms.slice(startIndex, startIndex + itemsPerPage);
-    }, [filteredRooms, currentPage]);
-
-    // Fungsi menghapus ruangan berdasarkan ID
-    const handleDeleteRoom = (id: number) => {
-        const updatedRooms = rooms.filter(room => room.id !== id);
-        setRooms(updatedRooms);
-        // Reset halaman jika ruangan di halaman terakhir dihapus
-        if (paginatedRooms.length === 1 && currentPage > 1) {
-            setCurrentPage(currentPage - 1);
-        }
+    const actionModal = () => {
+        setIsOpen(!isOpen);
+        setName("");
+        setCategoryId(0);
+        setPrice(0);
+        setCapacity(0);
+        setDesc("");
     };
 
-    // Fungsi menghapus ruangan yang dipilih
-    const handleDeleteSelectedRooms = () => {
-        const updatedRooms = rooms.filter(
-            room => !selectedRooms.includes(room.id)
-        );
-        setRooms(updatedRooms);
-        setSelectedRooms([]);
-        // Reset halaman jika ruangan di halaman terakhir dihapus
-        if (paginatedRooms.length <= selectedRooms.length && currentPage > 1) {
-            setCurrentPage(currentPage - 1);
-        }
+    const actionModalEdit = () => {
+        setIsEdit(!isEdit);
     };
 
-    // Fungsi toggle seleksi ruangan
-    const handleSelectRoom = (id: number) => {
-        setSelectedRooms(prev =>
-            prev.includes(id)
-                ? prev.filter(selectedId => selectedId !== id)
-                : [...prev, id]
-        );
+    const actionModalDelete = () => {
+        setIsDelete(!isDelete);
     };
 
-    // Fungsi toggle seleksi semua ruangan di halaman saat ini
-    const handleSelectAllOnPage = () => {
-        const pageRoomIds = paginatedRooms.map(room => room.id);
-        const allSelected = pageRoomIds.every(id => selectedRooms.includes(id));
-
-        if (allSelected) {
-            // Jika semua sudah dipilih, hapus semua dari seleksi
-            setSelectedRooms(prev =>
-                prev.filter(selectedId => !pageRoomIds.includes(selectedId))
-            );
-        } else {
-            // Tambahkan ID ruangan yang belum dipilih
-            setSelectedRooms(prev => [
-                ...prev.filter(selectedId => !pageRoomIds.includes(selectedId)),
-                ...pageRoomIds.filter(id => !prev.includes(id))
-            ]);
-        }
+    const actionEdit = (room: Room) => {
+        setRoomId(room.id);
+        setIsEdit(true);
+        setName(room.name);
+        setCategoryId(room.categoryId);
+        setPrice(room.price);
+        setCapacity(room.capacity);
+        setDesc(room.description);
     };
 
-    // Hitung jumlah halaman
-    const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
+    const actionDelete = (room: Room) => {
+        setRoomId(room.id);
+        setIsDelete(true);
+        setName(room.name);
+    };
+
+    const filteredRooms = rooms.filter((room) =>
+        room.name.toLowerCase().includes(search.toLowerCase()) ||
+        (categories.find(cat => cat.id === room.categoryId)?.name.toLowerCase().includes(search.toLowerCase()) || "")
+    );
 
     return (
-
-        <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-            <div className="container mx-auto max-w-6xl mt-16">
-                <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50" onClick={closeModal}>
-                            <div className="bg-white p-6 rounded-lg shadow-lg w-3/4 md:w-2/3 lg:w-1/2" onClick={(e) => e.stopPropagation()}>
-                                <h2 className="text-xl font-bold mb-4 text-center text-gray-800">Tambah Ruangan</h2>
-
-                                {/* Nama Ruangan */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Nama Ruangan</label>
-                                    <input type="text" name="nama" value={newRoom.nama} onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700" />
+        <>
+            {isOpen && (
+                <div id="default-modal" className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-60 backdrop-blur-sm">
+                    <div className="relative p-6 w-full max-w-2xl max-h-full animate-in zoom-in-95 duration-300">
+                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                        Tambah Data Ruangan
+                                    </h3>
                                 </div>
-
-                                {/* Lokasi */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Lokasi</label>
-                                    <input type="text" name="lokasi" value={newRoom.lokasi} onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700" />
-                                </div>
-
-                                {/* Kapasitas */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Kapasitas</label>
-                                    <input type="number" name="kapasitas" value={newRoom.kapasitas} onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700" />
-                                </div>
-
-                                {/* Status */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                                    <select name="status" value={newRoom.status} onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700">
-                                        <option value="Tersedia">Tersedia</option>
-                                        <option value="Tidak Tersedia">Tidak Tersedia</option>
-                                    </select>
-                                </div>
-
-                                {/* Fasilitas */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Fasilitas</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {fasilitasOptions.map(fasilitas => (
-                                            <label key={fasilitas} className="flex items-center space-x-2 text-gray-700">
-                                                <input type="checkbox" checked={newRoom.fasilitas.includes(fasilitas)}
-                                                    onChange={() => handleFasilitasChange(fasilitas)} />
-                                                <span>{fasilitas}</span>
+                                <button
+                                    type="button"
+                                    onClick={actionModal}
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-all duration-200"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleSubmit}>
+                                <div className="p-6 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                🏢 Nama Ruangan
                                             </label>
-                                        ))}
+                                            <input
+                                                type="text"
+                                                onChange={(e) => setName(e.target.value)}
+                                                id="name"
+                                                name="name"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                🏷️ Kategori Ruangan
+                                            </label>
+                                            <select
+                                                id="category"
+                                                name="category"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                onChange={(e) => setCategoryId(Number(e.target.value))}
+                                                required
+                                                value={categoryId}
+                                            >
+                                                <option value="">Pilih Kategori</option>
+                                                {categories.map((category) => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                💵 Harga
+                                            </label>
+                                            <input
+                                                type="number"
+                                                onChange={(e) => setPrice(Number(e.target.value))}
+                                                id="price"
+                                                name="price"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="capacity" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                👥 Kapasitas
+                                            </label>
+                                            <input
+                                                type="number"
+                                                onChange={(e) => setCapacity(Number(e.target.value))}
+                                                id="capacity"
+                                                name="capacity"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                                            📝 Deskripsi
+                                        </label>
+                                        <textarea
+                                            onChange={(e) => setDesc(e.target.value)}
+                                            id="description"
+                                            name="description"
+                                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                            required
+                                            rows={3}
+                                        />
                                     </div>
                                 </div>
-
-                                {/* Luas */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Luas (m²)</label>
-                                    <input type="number" name="luas" value={newRoom.luas} onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700" />
+                                <div className="flex items-center justify-end p-6 border-t border-gray-100 space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={actionModal}
+                                        className="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                                    >
+                                        Kembali
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                                    >
+                                        Simpan
+                                    </button>
                                 </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                                {/* Tombol Aksi */}
-                                <div className="flex justify-end gap-2 mt-4">
-                                    <button onClick={closeModal} className="px-4 py-2 bg-gray-400 rounded-lg text-white">Batal</button>
-                                    <button onClick={handleAddRoom} className="px-4 py-2 bg-blue-500 text-white rounded-lg">Tambah</button>
+            {isEdit && (
+                <div id="default-modal" className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-60 backdrop-blur-sm">
+                    <div className="relative p-6 w-full max-w-2xl max-h-full animate-in zoom-in-95 duration-300">
+                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                        Edit Data Ruangan
+                                    </h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={actionModalEdit}
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-all duration-200"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleUpdate}>
+                                <div className="p-6 space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                🏢 Nama Ruangan
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
+                                                id="name"
+                                                name="name"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                🏷️ Kategori Ruangan
+                                            </label>
+                                            <select
+                                                id="category"
+                                                name="category"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                onChange={(e) => setCategoryId(Number(e.target.value))}
+                                                required
+                                                value={categoryId}
+                                            >
+                                                <option value="">Pilih Kategori</option>
+                                                {categories.map((category) => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                💵 Harga
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={price}
+                                                onChange={(e) => setPrice(Number(e.target.value))}
+                                                id="price"
+                                                name="price"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="capacity" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                👥 Kapasitas
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={capacity}
+                                                onChange={(e) => setCapacity(Number(e.target.value))}
+                                                id="capacity"
+                                                name="capacity"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                                            📝 Deskripsi
+                                        </label>
+                                        <textarea
+                                            value={desc}
+                                            onChange={(e) => setDesc(e.target.value)}
+                                            id="description"
+                                            name="description"
+                                            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                            required
+                                            rows={3}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-end p-6 border-t border-gray-100 space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={actionModalEdit}
+                                        className="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                                    >
+                                        Kembali
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl hover:from-amber-700 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                                    >
+                                        Simpan
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDelete && (
+                <div id="default-modal" className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-60 backdrop-blur-sm">
+                    <div className="relative p-6 w-full max-w-md max-h-full animate-in zoom-in-95 duration-300">
+                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                        Hapus Data Ruangan
+                                    </h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={actionModalDelete}
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-all duration-200"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                <div className="text-center mb-6">
+                                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                        <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-lg font-semibold text-gray-800 mb-2">Konfirmasi Penghapusan</p>
+                                    <p className="text-gray-600">Apakah Anda yakin ingin menghapus ruangan '{name}'? Tindakan ini tidak dapat dibatalkan.</p>
+                                </div>
+                                <div className="flex items-center justify-center space-x-3">
+                                    <button
+                                        onClick={actionModalDelete}
+                                        className="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        onClick={handleDelete}
+                                        className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-xl hover:from-red-700 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                                    >
+                                        Hapus
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    )};
+                    </div>
+                </div>
+            )}
 
+            {isSuccess && (
+                <div role="alert" className="fixed top-6 right-6 max-w-md rounded-2xl border border-green-200 bg-white shadow-2xl z-50 animate-in slide-in-from-right-full duration-500">
+                    <div className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-lg font-bold text-gray-900 mb-1">{message}</p>
+                                <p className="text-sm text-gray-600">Data ruangan berhasil disimpan.</p>
+                            </div>
+                            <button
+                                className="flex-shrink-0 ml-4 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                type="button"
+                                aria-label="Dismiss alert"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
+            {isEditAlert && (
+                <div role="alert" className="fixed top-6 right-6 max-w-md rounded-2xl border border-green-200 bg-white shadow-2xl z-50 animate-in slide-in-from-right-full duration-500">
+                    <div className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-lg font-bold text-gray-900 mb-1">{message}</p>
+                                <p className="text-sm text-gray-600">Data ruangan berhasil diperbarui.</p>
+                            </div>
+                            <button
+                                className="flex-shrink-0 ml-4 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                type="button"
+                                aria-label="Dismiss alert"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                    {/* Header */}
-                    <div className="bg-blue-50 p-4 md:p-6 border-b border-gray-200 flex w-full">
-                        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Master Ruangan</h1>
+            {isDeleteAlert && (
+                <div role="alert" className="fixed top-6 right-6 max-w-md rounded-2xl border border-green-200 bg-white shadow-2xl z-50 animate-in slide-in-from-right-full duration-500">
+                    <div className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-lg font-bold text-gray-900 mb-1">{message}</p>
+                                <p className="text-sm text-gray-600">Data ruangan berhasil dihapus.</p>
+                            </div>
+                            <button
+                                className="flex-shrink-0 ml-4 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                type="button"
+                                aria-label="Dismiss alert"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                        <button
-                            onClick={openModal}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 ms-auto"
-                        >
-                            + Add Ruangan
-                        </button>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pt-24 pb-12">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+                        <div className="mb-6 lg:mb-0">
+                            <h1 className="text-4xl font-black bg-gradient-to-r from-gray-800 via-gray-700 to-blue-800 bg-clip-text text-transparent pb-2">
+                                Data Ruangan
+                            </h1>
+                            <p className="text-gray-600 text-lg">Kelola semua data ruangan dengan mudah dan efisien</p>
+                        </div>
+                        <div>
+                            <button
+                                onClick={actionModal}
+                                className="group relative inline-flex items-center px-6 py-3 overflow-hidden text-lg font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300"
+                            >
+                                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                                <svg className="w-5 h-5 mr-2 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                <span className="relative z-10">Tambah Ruangan</span>
+                            </button>
+                        </div>
                     </div>
 
-
-
-                    {/* Kontrol Pencarian dan Hapus Terpilih */}
-                    <div className="p-4 md:p-6 bg-white">
-                        <div className="flex flex-col md:flex-row gap-4 mb-4">
-                            <div className="relative flex-grow">
+                    <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20">
+                        <div className="mb-6">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
                                 <input
                                     type="text"
-                                    placeholder="Cari ruangan..."
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                                    placeholder="🔍 Cari berdasarkan nama atau kategori..."
+                                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm text-lg"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
                                 />
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             </div>
-                            {selectedRooms.length > 0 && (
-                                <button
-                                    onClick={handleDeleteSelectedRooms}
-                                    className="flex items-center justify-center bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 gap-2"
-                                >
-                                    <Trash2 size={18} />
-                                    Hapus Terpilih ({selectedRooms.length})
-                                </button>
-                            )}
                         </div>
 
-                        {/* Tabel Ruangan */}
-                        <div className="w-full overflow-x-auto">
-                            <table className="w-full min-w-max border-collapse">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="p-3 text-left w-12">
-                                            <input
-                                                type="checkbox"
-                                                className="form-checkbox h-5 w-5 text-blue-600 rounded"
-                                                checked={paginatedRooms.length > 0 &&
-                                                    paginatedRooms.every(room => selectedRooms.includes(room.id))}
-                                                onChange={handleSelectAllOnPage}
-                                            />
-                                        </th>
-                                        <th className="p-3 text-left text-gray-800">No.</th>
-                                        <th className="p-3 text-left text-gray-800">Nama Ruangan</th>
-                                        <th className="p-3 text-left text-gray-800">Lokasi</th>
-                                        <th className="p-3 text-left text-gray-800">Kapasitas</th>
-                                        <th className="p-3 text-left text-gray-800">Status</th>
-                                        <th className="p-3 text-left text-gray-800">Fasilitas</th>
-                                        <th className="p-3 text-left text-gray-800">Luas</th>
-                                        <th className="p-3 text-center text-gray-800">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedRooms.map((room, index) => (
-                                        <tr key={room.id} className="border-b hover:bg-gray-50 transition">
-                                            <td className="p-3">
-                                                <input
-                                                    type="checkbox"
-                                                    className="form-checkbox h-5 w-5 text-blue-600 rounded"
-                                                    checked={selectedRooms.includes(room.id)}
-                                                    onChange={() => handleSelectRoom(room.id)}
-                                                />
-                                            </td>
-                                            <td className="p-3 text-gray-700">{index + 1}</td>
-                                            <td className="p-3 text-gray-800 font-medium">{room.nama}</td>
-                                            <td className="p-3 text-gray-700">{room.lokasi}</td>
-                                            <td className="p-3 text-gray-800 font-semibold">{room.kapasitas} orang</td>
-                                            <td className="p-3 text-gray-700">
-                                                <span className={`px-2 py-1 rounded-full text-xs 
-                            ${room.status === 'Tersedia' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
-                        `}>
-                                                    {room.status}
-                                                </span>
-                                            </td>
-                                            <td className="p-3 text-gray-700">
-                                                {room.fasilitas.join(', ')}
-                                            </td>
-                                            <td className="p-3 text-gray-700">{room.luas} m²</td>
-                                            <td className="p-3 text-center">
-                                                <button
-                                                    onClick={() => handleDeleteRoom(room.id)}
-                                                    className="text-red-500 hover:text-red-700 transition"
-                                                    title="Hapus Ruangan"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </td>
+                        <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-xl">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                ID
+                                            </th>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Nama Ruangan
+                                            </th>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Kategori
+                                            </th>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Harga
+                                            </th>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Kapasitas
+                                            </th>
+                                            <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Aksi
+                                            </th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-100">
+                                        {filteredRooms.length > 0 ? (
+                                            filteredRooms.map((room, index) => (
+                                                <tr key={room.id} className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className="text-black text-sm font-bold">{room.id}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-semibold text-gray-900">
+                                                            {room.name}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className="text-sm font-semibold text-gray-900">
+                                                            {categories.find((cat) => cat.id == room.categoryId)?.name || "Unknown"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-semibold text-gray-900">
+                                                            Rp{room.price.toLocaleString('id-ID')}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-semibold text-gray-900">
+                                                            {room.capacity} orang
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                        <div className="flex justify-center space-x-3">
+                                                            <button
+                                                                onClick={() => actionEdit(room)}
+                                                                className="group relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                                                            >
+                                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                </svg>
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => actionDelete(room)}
+                                                                className="group relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                                                            >
+                                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                                Hapus
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={6} className="px-6 py-16 text-center">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full flex items-center justify-center mb-4">
+                                                            <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                        </div>
+                                                        <p className="text-xl font-semibold text-gray-500 mb-2">
+                                                            {rooms.length === 0 ? "📊 Memuat data ruangan..." : "🔍 Tidak ditemukan ruangan yang sesuai"}
+                                                        </p>
+                                                        <p className="text-gray-400">
+                                                            {rooms.length === 0 ? "Mohon tunggu sebentar..." : "Coba ubah kata kunci pencarian Anda"}
+                                                        </p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-
-                        {/* Tidak ada ruangan */}
-                        {filteredRooms.length === 0 && (
-                            <div className="text-center py-4 text-gray-600">
-                                Tidak ada ruangan ditemukan
-                            </div>
-                        )}
-
-                        {/* Pagination */}
-                        <div className="flex flex-col md:flex-row justify-between items-center p-4 gap-2">
-                            <div className="text-gray-700">
-                                Menampilkan {paginatedRooms.length} dari {filteredRooms.length} ruangan
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                    className="p-2 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                >
-                                    <ChevronLeft className="text-gray-700" />
-                                </button>
-                                <span className="px-4 py-2 bg-blue-50 rounded-lg text-gray-800">
-                                    Halaman {currentPage} dari {totalPages}
-                                </span>
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                    className="p-2 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                >
-                                    <ChevronRight className="text-gray-700" />
-                                </button>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

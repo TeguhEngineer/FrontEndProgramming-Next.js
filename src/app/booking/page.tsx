@@ -1,484 +1,581 @@
-"use client"
-
-import React, { useState, useMemo, useEffect } from 'react';
-import { Trash2, Search, ChevronLeft, ChevronRight, Calendar, Clock, User } from 'lucide-react';
-
-// Define interfaces for Booking, Room, and User
-interface Room {
-    id: number;
-    nama: string;
-    kapasitas: number;
-    lokasi: string;
-    status: string;
-}
-
-interface User {
-    id: number;
-    nama: string;
-    email: string;
-    departemen: string;
-}
+"use client";
+import { useEffect, useState } from "react";
 
 interface Booking {
     id: number;
+    bookingDate: string;
     roomId: number;
-    userId: number;
-    tanggalMulai: string;
-    tanggalSelesai: string;
-    jamMulai: string;
-    jamSelesai: string;
-    keperluan: string;
-    status: 'Menunggu' | 'Disetujui' | 'Ditolak';
+    roomName?: string; // Ditambahkan untuk menampilkan nama ruangan
+}
+
+interface Room {
+    id: number;
+    name: string;
 }
 
 export default function BookingTable() {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
-    const itemsPerPage = 5;
+    const [search, setSearch] = useState("");
+    const [message, setMessage] = useState("");
+    const [bookingDate, setBookingDate] = useState("");
+    const [roomId, setRoomId] = useState(0);
+    const [bookingId, setBookingId] = useState(0);
+    const [isOpen, setIsOpen] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [isDelete, setIsDelete] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
-    // Modal add booking
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newBooking, setNewBooking] = useState<Booking>({
-        id: 0,
-        roomId: 0,
-        userId: 0,
-        tanggalMulai: '',
-        tanggalSelesai: '',
-        jamMulai: '',
-        jamSelesai: '',
-        keperluan: '',
-        status: 'Menunggu'
-    });
+    const accessToken = localStorage.getItem("accessToken");
 
-    const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
-
-    // Filtering bookings (moved up to resolve initialization issue)
-    const filteredBookings = useMemo(() => {
-        return bookings.filter(booking => {
-            const room = rooms.find(r => r?.id === booking.roomId);
-            const user = users.find(u => u?.id === booking.userId);
-
-            const searchTermLower = searchTerm.toLowerCase();
-
-            return (
-                // Safe toLowerCase checks with optional chaining
-                (room?.nama?.toLowerCase?.()?.includes(searchTermLower) ?? false) ||
-                (user?.nama?.toLowerCase?.()?.includes(searchTermLower) ?? false) ||
-                booking.keperluan.toLowerCase().includes(searchTermLower) ||
-                booking.status.toLowerCase().includes(searchTermLower)
-            );
-        });
-    }, [bookings, searchTerm, rooms, users]);
-
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
-    const paginatedBookings = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return filteredBookings.slice(startIndex, startIndex + itemsPerPage);
-    }, [filteredBookings, currentPage, itemsPerPage]);
-
-    // Fetch initial data
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [roomsResponse, usersResponse, bookingsResponse] = await Promise.all([
-                    fetch('/rooms.json').then(res => res.json()),
-                    fetch('/users.json').then(res => res.json()),
-                    fetch('/bookings.json').then(res => res.json())
-                ]);
-                setRooms(roomsResponse);
-                setUsers(usersResponse);
-                setBookings(bookingsResponse);
-            } catch (error) {
-                console.error('Error fetching data:', error);
+    const handleGet = async () => {
+        try {
+            const response = await fetch("https://simaru.amisbudi.cloud/api/bookings", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+            });
+            const { data } = await response.json();
+            console.log(data);
+            if (data) {
+                setBookings(data);
             }
-        };
+        } catch (err) {
+            console.error('Error fetching bookings:', err);
+        }
+    };
 
-        fetchData();
+    const fetchRooms = async () => {
+        try {
+            const response = await fetch("https://simaru.amisbudi.cloud/api/rooms", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+            });
+
+            const { data } = await response.json();
+            setRooms(data);
+        } catch (error) {
+            console.error("Failed to fetch rooms:", error);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                bookingDate: bookingDate,
+                roomId: roomId,
+            };
+
+            const response = await fetch("https://simaru.amisbudi.cloud/api/bookings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const { data, message } = await response.json();
+            console.log(data);
+            if (data) {
+                setMessage(message);
+                setIsSuccess(true);
+                setIsOpen(false);
+                setTimeout(() => setIsSuccess(false), 3000);
+                handleGet();
+            }
+        } catch (err) {
+            console.error('Error adding booking:', err);
+        }
+    };
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                bookingDate: bookingDate,
+                roomId: roomId,
+            };
+
+            const response = await fetch(`https://simaru.amisbudi.cloud/api/bookings/${bookingId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + accessToken,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const { data, message } = await response.json();
+            console.log(data);
+            if (data) {
+                setMessage(message);
+                setIsSuccess(true);
+                setIsEdit(false);
+                setTimeout(() => setIsSuccess(false), 3000);
+                handleGet();
+            }
+        } catch (err) {
+            console.error('Error updating booking:', err);
+        }
+    };
+
+    const handleDelete = async () => {
+        try {
+            const response = await fetch(`https://simaru.amisbudi.cloud/api/bookings/${bookingId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: "Bearer " + accessToken,
+                },
+            });
+
+            const { data, message } = await response.json();
+            console.log(data);
+            if (data) {
+                setMessage(message);
+            }
+        } catch (err) {
+            console.error('Error deleting booking:', err);
+        } finally {
+            setIsSuccess(true);
+            setIsDelete(false);
+            setTimeout(() => setIsSuccess(false), 3000);
+            handleGet();
+        }
+    };
+
+    useEffect(() => {
+        handleGet();
+        fetchRooms();
     }, []);
 
-    // Handle input changes for new booking
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setNewBooking(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    const actionModal = () => {
+        setIsOpen(!isOpen);
+        setBookingDate("");
+        setRoomId(0);
     };
 
-    // Handle booking deletion
-    const handleDeleteBooking = (bookingId: number) => {
-        setBookings(prevBookings => prevBookings.filter(booking => booking.id !== bookingId));
-        // Remove from selected bookings if it was selected
-        setSelectedBookings(prev => prev.filter(id => id !== bookingId));
+    const actionModalEdit = () => {
+        setIsEdit(!isEdit);
     };
 
-    // Handle deleting selected bookings
-    const handleDeleteSelectedBookings = () => {
-        setBookings(prevBookings =>
-            prevBookings.filter(booking => !selectedBookings.includes(booking.id))
-        );
-        setSelectedBookings([]); // Clear selected bookings
+    const actionModalDelete = () => {
+        setIsDelete(!isDelete);
     };
 
-    // Handle booking selection
-    const handleSelectBooking = (bookingId: number) => {
-        setSelectedBookings(prev =>
-            prev.includes(bookingId)
-                ? prev.filter(id => id !== bookingId)
-                : [...prev, bookingId]
-        );
+    const actionEdit = (booking: Booking) => {
+        setBookingId(booking.id);
+        setIsEdit(true);
+        setBookingDate(booking.bookingDate);
+        setRoomId(booking.roomId);
     };
 
-    // Handle select all bookings on current page
-    const handleSelectAllOnPage = () => {
-        const allSelected = paginatedBookings.every(booking =>
-            selectedBookings.includes(booking.id)
-        );
-
-        if (allSelected) {
-            // Deselect all on current page
-            setSelectedBookings(prev =>
-                prev.filter(id => !paginatedBookings.some(booking => booking.id === id))
-            );
-        } else {
-            // Select all on current page
-            const currentPageBookingIds = paginatedBookings.map(booking => booking.id);
-            setSelectedBookings(prev => [
-                ...prev.filter(id => !currentPageBookingIds.includes(id)),
-                ...currentPageBookingIds
-            ]);
-        }
+    const actionDelete = (booking: Booking) => {
+        setBookingId(booking.id);
+        setIsDelete(true);
     };
 
-    // Add new booking
-    const handleAddBooking = () => {
-        // Validation
-        if (!newBooking.roomId || !newBooking.userId || !newBooking.tanggalMulai ||
-            !newBooking.tanggalSelesai || !newBooking.jamMulai || !newBooking.jamSelesai) {
-            alert("Harap lengkapi semua data booking!");
-            return;
-        }
-
-        // Check room availability (simple check)
-        const isRoomAvailable = !bookings.some(booking =>
-            booking.roomId === newBooking.roomId &&
-            booking.tanggalMulai === newBooking.tanggalMulai &&
-            booking.status === 'Disetujui'
-        );
-
-        if (!isRoomAvailable) {
-            alert("Ruangan sudah dibooking pada tanggal tersebut!");
-            return;
-        }
-
-        setBookings(prevBookings => [
-            ...prevBookings,
-            { ...newBooking, id: prevBookings.length + 1 }
-        ]);
-        closeModal();
-    };
+    const filteredBookings = bookings.filter((booking) =>
+        booking.bookingDate.toLowerCase().includes(search.toLowerCase()) ||
+        (rooms.find(room => room.id === booking.roomId)?.name.toLowerCase().includes(search.toLowerCase()) || "")
+    );
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-            <div className="container mx-auto max-w-6xl mt-16">
-                <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-                    {/* Modal for Adding Booking */}
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-50" onClick={closeModal}>
-                            <div className="bg-white p-6 rounded-lg shadow-lg w-3/4 md:w-2/3 lg:w-1/2" onClick={(e) => e.stopPropagation()}>
-                                <h2 className="text-xl font-bold mb-4 text-center text-gray-800">Tambah Booking</h2>
-
-                                {/* Room Selection */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Ruangan</label>
-                                    <select
-                                        name="roomId"
-                                        value={newBooking.roomId}
-                                        onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700"
-                                    >
-                                        <option value="">Pilih Ruangan</option>
-                                        {rooms.map(room => (
-                                            <option key={room.id} value={room.id}>
-                                                {room.nama} - {room.lokasi}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* User Selection */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Pengguna</label>
-                                    <select
-                                        name="userId"
-                                        value={newBooking.userId}
-                                        onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700"
-                                    >
-                                        <option value="">Pilih Pengguna</option>
-                                        {users.map(user => (
-                                            <option key={user.id} value={user.id}>
-                                                {user.nama} - {user.departemen}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Date Range */}
-                                <div className="mb-3 flex gap-2">
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
-                                        <input
-                                            type="date"
-                                            name="tanggalMulai"
-                                            value={newBooking.tanggalMulai}
-                                            onChange={handleInputChange}
-                                            className="w-full p-2 border rounded-md text-gray-700"
-                                        />
+        <>
+            {isOpen && (
+                <div id="default-modal" className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-60 backdrop-blur-sm">
+                    <div className="relative p-6 w-full max-w-2xl max-h-full animate-in zoom-in-95 duration-300">
+                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
                                     </div>
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-gray-700">Tanggal Selesai</label>
-                                        <input
-                                            type="date"
-                                            name="tanggalSelesai"
-                                            value={newBooking.tanggalSelesai}
-                                            onChange={handleInputChange}
-                                            className="w-full p-2 border rounded-md text-gray-700"
-                                        />
+                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                        Tambah Data Booking
+                                    </h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={actionModal}
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-all duration-200"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleSubmit}>
+                                <div className="p-6 space-y-6">
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label htmlFor="bookingDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                📅 Tanggal Booking
+                                            </label>
+                                            <input
+                                                type="date"
+                                                onChange={(e) => setBookingDate(e.target.value)}
+                                                id="bookingDate"
+                                                name="bookingDate"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="room" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                🏢 Ruangan
+                                            </label>
+                                            <select
+                                                id="room"
+                                                name="room"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                onChange={(e) => setRoomId(Number(e.target.value))}
+                                                required
+                                                value={roomId}
+                                            >
+                                                <option value="">Pilih Ruangan</option>
+                                                {rooms.map((room) => (
+                                                    <option key={room.id} value={room.id}>
+                                                        {room.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Time Range */}
-                                <div className="mb-3 flex gap-2">
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-gray-700">Jam Mulai</label>
-                                        <input
-                                            type="time"
-                                            name="jamMulai"
-                                            value={newBooking.jamMulai}
-                                            onChange={handleInputChange}
-                                            className="w-full p-2 border rounded-md text-gray-700"
-                                        />
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-gray-700">Jam Selesai</label>
-                                        <input
-                                            type="time"
-                                            name="jamSelesai"
-                                            value={newBooking.jamSelesai}
-                                            onChange={handleInputChange}
-                                            className="w-full p-2 border rounded-md text-gray-700"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Purpose */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Keperluan</label>
-                                    <input
-                                        type="text"
-                                        name="keperluan"
-                                        value={newBooking.keperluan}
-                                        onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700"
-                                        placeholder="Masukkan keperluan booking"
-                                    />
-                                </div>
-
-                                {/* Status */}
-                                <div className="mb-3">
-                                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                                    <select
-                                        name="status"
-                                        value={newBooking.status}
-                                        onChange={handleInputChange}
-                                        className="w-full p-2 border rounded-md text-gray-700"
-                                    >
-                                        <option value="Menunggu">Menunggu</option>
-                                        <option value="Disetujui">Disetujui</option>
-                                        <option value="Ditolak">Ditolak</option>
-                                    </select>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex justify-end gap-2 mt-4">
+                                <div className="flex items-center justify-end p-6 border-t border-gray-100 space-x-3">
                                     <button
-                                        onClick={closeModal}
-                                        className="px-4 py-2 bg-gray-400 rounded-lg text-white"
+                                        type="button"
+                                        onClick={actionModal}
+                                        className="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                                    >
+                                        Kembali
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                                    >
+                                        Simpan
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isEdit && (
+                <div id="default-modal" className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-60 backdrop-blur-sm">
+                    <div className="relative p-6 w-full max-w-2xl max-h-full animate-in zoom-in-95 duration-300">
+                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                        Edit Data Booking
+                                    </h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={actionModalEdit}
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-all duration-200"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleUpdate}>
+                                <div className="p-6 space-y-6">
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label htmlFor="bookingDate" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                📅 Tanggal Booking
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={bookingDate}
+                                                onChange={(e) => setBookingDate(e.target.value)}
+                                                id="bookingDate"
+                                                name="bookingDate"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="room" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                🏢 Ruangan
+                                            </label>
+                                            <select
+                                                id="room"
+                                                name="room"
+                                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 bg-gray-50 hover:bg-white"
+                                                onChange={(e) => setRoomId(Number(e.target.value))}
+                                                required
+                                                value={roomId}
+                                            >
+                                                <option value="">Pilih Ruangan</option>
+                                                {rooms.map((room) => (
+                                                    <option key={room.id} value={room.id}>
+                                                        {room.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-end p-6 border-t border-gray-100 space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={actionModalEdit}
+                                        className="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+                                    >
+                                        Kembali
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-amber-600 to-orange-600 rounded-xl hover:from-amber-700 hover:to-orange-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                                    >
+                                        Simpan
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDelete && (
+                <div id="default-modal" className="fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-60 backdrop-blur-sm">
+                    <div className="relative p-6 w-full max-w-md max-h-full animate-in zoom-in-95 duration-300">
+                        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-100">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                                        Hapus Data Booking
+                                    </h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={actionModalDelete}
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl p-2 transition-all duration-200"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div className="p-6">
+                                <div className="text-center mb-6">
+                                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                        <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-lg font-semibold text-gray-800 mb-2">Konfirmasi Penghapusan</p>
+                                    <p className="text-gray-600">Apakah Anda yakin ingin menghapus booking ini? Tindakan ini tidak dapat dibatalkan.</p>
+                                </div>
+                                <div className="flex items-center justify-center space-x-3">
+                                    <button
+                                        onClick={actionModalDelete}
+                                        className="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                                     >
                                         Batal
                                     </button>
                                     <button
-                                        onClick={handleAddBooking}
-                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                                        onClick={handleDelete}
+                                        className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-xl hover:from-red-700 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all duration-200"
                                     >
-                                        Tambah
+                                        Hapus
                                     </button>
                                 </div>
                             </div>
                         </div>
-                    )}
+                    </div>
+                </div>
+            )}
 
-                    {/* Header */}
-                    <div className="bg-blue-50 p-4 md:p-6 border-b border-gray-200 flex w-full">
-                        <h1 className="text-xl md:text-2xl font-bold text-gray-800">Master Booking</h1>
+            {isSuccess && (
+                <div role="alert" className="fixed top-6 right-6 max-w-md rounded-2xl border border-green-200 bg-white shadow-2xl z-50 animate-in slide-in-from-right-full duration-500">
+                    <div className="p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-lg font-bold text-gray-900 mb-1">{message}</p>
+                                <p className="text-sm text-gray-600">Data booking telah berhasil diproses.</p>
+                            </div>
+                            <button
+                                className="flex-shrink-0 ml-4 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                type="button"
+                                onClick={() => setIsSuccess(false)}
+                                aria-label="Dismiss alert"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                        <button
-                            onClick={openModal}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300 ms-auto"
-                        >
-                            + Add Booking
-                        </button>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pt-24 pb-12">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
+                        <div className="mb-6 lg:mb-0">
+                            <h1 className="text-4xl font-black bg-gradient-to-r from-gray-800 via-gray-700 to-blue-800 bg-clip-text text-transparent pb-2">
+                                Data Booking
+                            </h1>
+                            <p className="text-gray-600 text-lg">Kelola semua data booking dengan mudah dan efisien</p>
+                        </div>
+                        <div>
+                            <button
+                                onClick={actionModal}
+                                className="group relative inline-flex items-center px-6 py-3 overflow-hidden text-lg font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300"
+                            >
+                                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                                <svg className="w-5 h-5 mr-2 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                <span className="relative z-10">Tambah Booking</span>
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Search and Delete Controls */}
-                    <div className="p-4 md:p-6 bg-white">
-                        <div className="flex flex-col md:flex-row gap-4 mb-4">
-                            <div className="relative flex-grow">
+                    <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20">
+                        <div className="mb-6">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
                                 <input
                                     type="text"
-                                    placeholder="Cari booking..."
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                                    placeholder="🔍 Cari berdasarkan tanggal atau ruangan..."
+                                    className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm text-lg"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
                                 />
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             </div>
-                            {selectedBookings.length > 0 && (
-                                <button
-                                    onClick={handleDeleteSelectedBookings}
-                                    className="flex items-center justify-center bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300 gap-2"
-                                >
-                                    <Trash2 size={18} />
-                                    Hapus Terpilih ({selectedBookings.length})
-                                </button>
-                            )}
                         </div>
 
-                        {/* Booking Table */}
-                        <div className="w-full overflow-x-auto">
-                            <table className="w-full min-w-max border-collapse">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="p-3 text-left w-12">
-                                            <input
-                                                type="checkbox"
-                                                className="form-checkbox h-5 w-5 text-blue-600 rounded"
-                                                checked={paginatedBookings.length > 0 &&
-                                                    paginatedBookings.every(booking => selectedBookings.includes(booking.id))}
-                                                onChange={handleSelectAllOnPage}
-                                            />
-                                        </th>
-                                        <th className="p-3 text-left text-gray-800">No.</th>
-                                        <th className="p-3 text-left text-gray-800">Ruangan</th>
-                                        <th className="p-3 text-left text-gray-800">Pengguna</th>
-                                        <th className="p-3 text-left text-gray-800">Tanggal</th>
-                                        <th className="p-3 text-left text-gray-800">Jam</th>
-                                        <th className="p-3 text-left text-gray-800">Keperluan</th>
-                                        <th className="p-3 text-left text-gray-800">Status</th>
-                                        <th className="p-3 text-center text-gray-800">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedBookings.map((booking, index) => {
-                                        const room = rooms.find(r => r.id === booking.roomId);
-                                        const user = users.find(u => u.id === booking.userId);
-
-                                        return (
-                                            <tr key={booking.id} className="border-b hover:bg-gray-50 transition">
-                                                <td className="p-3">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="form-checkbox h-5 w-5 text-blue-600 rounded"
-                                                        checked={selectedBookings.includes(booking.id)}
-                                                        onChange={() => handleSelectBooking(booking.id)}
-                                                    />
-                                                </td>
-                                                <td className="p-3 text-gray-700">{index + 1}</td>
-                                                <td className="p-3 text-gray-800 font-medium">
-                                                    {room ? room.nama : 'N/A'}
-                                                </td>
-                                                <td className="p-3 text-gray-700">
-                                                    {user ? user.nama : 'N/A'}
-                                                </td>
-                                                <td className="p-3 text-gray-700 flex items-center gap-1">
-                                                    <Calendar size={16} className="text-gray-500" />
-                                                    {booking.tanggalMulai} - {booking.tanggalSelesai}
-                                                </td>
-                                                <td className="p-3 text-gray-700 flex items-center gap-1">
-                                                    <Clock size={16} className="text-gray-500" />
-                                                    {booking.jamMulai} - {booking.jamSelesai}
-                                                </td>
-                                                <td className="p-3 text-gray-700">{booking.keperluan}</td>
-                                                <td className="p-3">
-                                                    <span className={`px-2 py-1 rounded-full text-xs 
-                                                        ${booking.status === 'Disetujui' ? 'bg-green-100 text-green-800'
-                                                            : booking.status === 'Menunggu' ? 'bg-yellow-100 text-yellow-800'
-                                                                : 'bg-red-100 text-red-800'}
-                                                    `}>
-                                                        {booking.status}
-                                                    </span>
-                                                </td>
-                                                <td className="p-3 text-center">
-                                                    <button
-                                                        onClick={() => handleDeleteBooking(booking.id)}
-                                                        className="text-red-500 hover:text-red-700 transition"
-                                                        title="Hapus Booking"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
+                        <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-xl">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+                                        <tr>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                ID
+                                            </th>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Tanggal Booking
+                                            </th>
+                                            <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Ruangan
+                                            </th>
+                                            <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 uppercase tracking-wider">
+                                                Aksi
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-100">
+                                        {filteredBookings.length > 0 ? (
+                                            filteredBookings.map((booking, index) => (
+                                                <tr key={booking.id} className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className="text-black text-sm font-bold">{booking.id}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-semibold text-gray-900">
+                                                            {new Date(booking.bookingDate).toLocaleDateString('id-ID', {
+                                                                weekday: 'long',
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric'
+                                                            })}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className="inline-flex px-3 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                                                            {rooms.find((room) => room.id == booking.roomId)?.name || "Unknown"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                        <div className="flex justify-center space-x-3">
+                                                            <button
+                                                                onClick={() => actionEdit(booking)}
+                                                                className="group relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                                                            >
+                                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                </svg>
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => actionDelete(booking)}
+                                                                className="group relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                                                            >
+                                                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                                Hapus
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={4} className="px-6 py-16 text-center">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full flex items-center justify-center mb-4">
+                                                            <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                        </div>
+                                                        <p className="text-xl font-semibold text-gray-500 mb-2">
+                                                            {bookings.length === 0 ? "📊 Memuat data booking..." : "🔍 Tidak ditemukan booking yang sesuai"}
+                                                        </p>
+                                                        <p className="text-gray-400">
+                                                            {bookings.length === 0 ? "Mohon tunggu sebentar..." : "Coba ubah kata kunci pencarian Anda"}
+                                                        </p>
+                                                    </div>
                                                 </td>
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* No Bookings Found */}
-                        {filteredBookings.length === 0 && (
-                            <div className="text-center py-4 text-gray-600">
-                                Tidak ada booking ditemukan
-                            </div>
-                        )}
-
-                        {/* Pagination */}
-                        <div className="flex flex-col md:flex-row justify-between items-center p-4 gap-2">
-                            <div className="text-gray-700">
-                                Menampilkan {paginatedBookings.length} dari {filteredBookings.length} booking
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                    className="p-2 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                >
-                                    <ChevronLeft className="text-gray-700" />
-                                </button>
-                                <span className="px-4 py-2 bg-blue-50 rounded-lg text-gray-800">
-                                    Halaman {currentPage} dari {totalPages}
-                                </span>
-                                <button
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                    className="p-2 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                                >
-                                    <ChevronRight className="text-gray-700" />
-                                </button>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
