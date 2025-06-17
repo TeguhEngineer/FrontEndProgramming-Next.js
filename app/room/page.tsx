@@ -35,9 +35,9 @@ export default function RoomTable() {
     const [isEditAlert, setEditAlert] = useState(false); // pesan untuk menyimpan data
     const [isDeleteAlert, setDeleteAlert] = useState(false); // pesan untuk menyimpan data
 
-    const accessToken = localStorage.getItem("accessToken");
+    // const accessToken = localStorage.getItem("accessToken");
 
-    const handleGet = async () => {
+    const handleGet = async (accessToken: string) => {
         try {
             const response = await fetch("https://simaru.amisbudi.cloud/api/rooms", {
                 method: "GET",
@@ -58,6 +58,12 @@ export default function RoomTable() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const payload = {
                 name: name,
@@ -84,7 +90,7 @@ export default function RoomTable() {
                 setISuccess(true);
                 setIsOpen(false);
                 setTimeout(() => setISuccess(false), 3000);
-                handleGet();
+                handleGet(accessToken);
             }
         } catch (err) {
             console.error('Error adding room:', err);
@@ -93,6 +99,12 @@ export default function RoomTable() {
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const payload = {
                 name: name,
@@ -119,7 +131,7 @@ export default function RoomTable() {
                 setEditAlert(true);
                 setIsEdit(false);
                 setTimeout(() => setEditAlert(false), 3000);
-                handleGet();
+                handleGet(accessToken);
             }
         } catch (err) {
             console.error('Error updating room:', err);
@@ -128,6 +140,12 @@ export default function RoomTable() {
 
     const handleDelete = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const payload = {
                 name: name,
@@ -159,11 +177,16 @@ export default function RoomTable() {
             setDeleteAlert(true);
             setIsDelete(false);
             setTimeout(() => setDeleteAlert(false), 3000);
-            handleGet();
+            handleGet(accessToken);
         }
     };
 
     const fetchCategories = async () => {
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const response = await fetch("https://simaru.amisbudi.cloud/api/categories", {
                 method: "GET",
@@ -181,7 +204,12 @@ export default function RoomTable() {
     };
 
     useEffect(() => {
-        handleGet();
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
+        handleGet(accessToken);
         fetchCategories();
     }, []);
 
