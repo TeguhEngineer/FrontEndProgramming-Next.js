@@ -22,9 +22,9 @@ export default function UserTable() {
     const [isSuccess, setISuccess] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
 
-    const accessToken = localStorage.getItem("accessToken");
+    // const accessToken = localStorage.getItem("accessToken");
 
-    const handleGet = async () => {
+    const handleGet = async (accessToken: string) => {
         try {
             const response = await fetch("https://simaru.amisbudi.cloud/api/users", {
                 method: "GET",
@@ -44,6 +44,13 @@ export default function UserTable() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
+
         try {
             const payload = { name, email, role };
 
@@ -61,7 +68,7 @@ export default function UserTable() {
             setISuccess(true);
             setIsOpen(false);
             setTimeout(() => setISuccess(false), 3000);
-            handleGet();
+            handleGet(accessToken);
         } catch (err) {
             console.error('Error adding user:', err);
         }
@@ -70,6 +77,12 @@ export default function UserTable() {
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!userId) return;
+
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
 
         try {
             const payload = { name, email, role };
@@ -88,7 +101,7 @@ export default function UserTable() {
             setISuccess(true);
             setIsEdit(false);
             setTimeout(() => setISuccess(false), 3000);
-            handleGet();
+            handleGet(accessToken);
         } catch (err) {
             console.error('Error updating user:', err);
         }
@@ -97,6 +110,11 @@ export default function UserTable() {
     const handleDelete = async () => {
         if (!userId) return;
 
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const response = await fetch(`https://simaru.amisbudi.cloud/api/users/${userId}`, {
                 method: "DELETE",
@@ -113,7 +131,7 @@ export default function UserTable() {
             setISuccess(true);
             setIsDelete(false);
             setTimeout(() => setISuccess(false), 3000);
-            handleGet();
+            handleGet(accessToken);
         }
     };
 
@@ -145,7 +163,12 @@ export default function UserTable() {
     );
 
     useEffect(() => {
-        handleGet();
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
+        handleGet(accessToken);
     }, []);
 
     return (
