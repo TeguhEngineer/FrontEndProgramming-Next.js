@@ -26,9 +26,7 @@ export default function BookingTable() {
     const [isDelete, setIsDelete] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
-    const accessToken = localStorage.getItem("accessToken");
-
-    const handleGet = async () => {
+    const handleGet = async (accessToken: string) => {
         try {
             const response = await fetch("https://simaru.amisbudi.cloud/api/bookings", {
                 method: "GET",
@@ -38,7 +36,6 @@ export default function BookingTable() {
                 },
             });
             const { data } = await response.json();
-            console.log(data);
             if (data) {
                 setBookings(data);
             }
@@ -47,7 +44,15 @@ export default function BookingTable() {
         }
     };
 
+    // useEffect(() => {
+    //     const accessToken = localStorage.getItem("accessToken");
+    //     if (accessToken) {
+    //         handleGet(accessToken);
+    //     }
+    // }, []);
+
     const fetchRooms = async () => {
+        const accessToken = localStorage.getItem("accessToken");
         try {
             const response = await fetch("https://simaru.amisbudi.cloud/api/rooms", {
                 method: "GET",
@@ -66,6 +71,12 @@ export default function BookingTable() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const payload = {
                 bookingDate: bookingDate,
@@ -88,7 +99,7 @@ export default function BookingTable() {
                 setIsSuccess(true);
                 setIsOpen(false);
                 setTimeout(() => setIsSuccess(false), 3000);
-                handleGet();
+                handleGet(accessToken);
             }
         } catch (err) {
             console.error('Error adding booking:', err);
@@ -97,6 +108,12 @@ export default function BookingTable() {
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const payload = {
                 bookingDate: bookingDate,
@@ -119,7 +136,7 @@ export default function BookingTable() {
                 setIsSuccess(true);
                 setIsEdit(false);
                 setTimeout(() => setIsSuccess(false), 3000);
-                handleGet();
+                handleGet(accessToken);
             }
         } catch (err) {
             console.error('Error updating booking:', err);
@@ -127,6 +144,11 @@ export default function BookingTable() {
     };
 
     const handleDelete = async () => {
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
         try {
             const response = await fetch(`https://simaru.amisbudi.cloud/api/bookings/${bookingId}`, {
                 method: "DELETE",
@@ -146,12 +168,17 @@ export default function BookingTable() {
             setIsSuccess(true);
             setIsDelete(false);
             setTimeout(() => setIsSuccess(false), 3000);
-            handleGet();
+            handleGet(accessToken);
         }
     };
 
     useEffect(() => {
-        handleGet();
+        const accessToken = localStorage.getItem("accessToken"); // ✅ Ambil token di sini
+        if (!accessToken) {
+            console.error("Access token not found");
+            return;
+        }
+        handleGet(accessToken);
         fetchRooms();
     }, []);
 
