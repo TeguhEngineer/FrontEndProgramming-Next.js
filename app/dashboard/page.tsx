@@ -2,7 +2,6 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Calendar, UserCheck, Clock, DollarSign } from 'lucide-react';
-import { useState } from 'react';
 
 export default function DashboardBooking() {
     const dataPemesanan = [

@@ -1,7 +1,6 @@
 'use client';
 
 import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUserFriends, FaSearch, FaArrowRight } from 'react-icons/fa';
-import { FiLogIn, FiUserPlus } from 'react-icons/fi';
 
 export default function Home() {
   return (
